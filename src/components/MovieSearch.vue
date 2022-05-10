@@ -6,13 +6,8 @@
           <b-icon icon="search" class="h3" variant="light"></b-icon>
         </div>
         <div style="display: flex">
-          <b-form-input
-            v-model="search"
-            class="weiss-cinema"
-            type="search"
-            placeholder="Search for movies"
-            @keyup="searchApi(search)"
-          ></b-form-input>
+          <b-form-input v-model="search" class="weiss-cinema" type="search" placeholder="Search for movies"
+            @keyup="searchApi(search)"></b-form-input>
         </div>
       </b-col>
     </b-row>
@@ -21,29 +16,16 @@
     </p>
     <div v-if="searchResult">
       <hr class="solid" />
-      <div
-        v-for="result in searchResult"
-        :key="result.imdbID"
-        class="container"
-      >
-        <b-img fluid :src="result.Poster" class="p-1 image"></b-img>
+      <div v-for="result in searchResult" :key="result.imdbID" class="container p-2">
+        <b-img :src="result.Poster" class="image"></b-img>
         <div class="middle">
-          <b-icon
-            v-if="!inWishlist(result.imdbID)"
-            icon="heart"
-            class="h3"
-            variant="danger"
-            @click="addWishlist(result)"
-          ></b-icon>
-          <b-icon
-            v-else
-            icon="heart-fill"
-            class="h3"
-            variant="danger"
-            @click="removeWishlist(result)"
-          ></b-icon>
-          <div class="text">
-            {{ result.Title }} <br /><br />
+          <div>
+            <b-icon v-if="!inWishlist(result.imdbID)" icon="heart" class="h3" variant="danger"
+              @click="addWishlist(result)"></b-icon>
+            <b-icon v-else icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(result)"></b-icon>
+          </div>
+          <div class="text" @click="openModal(result.imdbID)">
+            {{ result.Title }} <br />
             {{ result.Year }}
           </div>
         </div>
@@ -57,14 +39,9 @@
       <p class="serach-result-label">Your Wishlist</p>
       <hr class="solid" />
       <div v-for="result in wishlist" :key="result.imdbID" class="container">
-        <b-img fluid :src="result.Poster" class="p-1 image"></b-img>
+        <b-img fluid :src="result.Poster" @click="openModal(result.imdbID)" class="image"></b-img>
         <div class="middle">
-          <b-icon
-            icon="heart-fill"
-            class="h3"
-            variant="danger"
-            @click="removeWishlist(result)"
-          ></b-icon>
+          <b-icon icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(result)"></b-icon>
           <div class="text">
             {{ result.Title }} <br /><br />
             {{ result.Year }}
@@ -72,6 +49,30 @@
         </div>
       </div>
     </div>
+    <b-modal v-if="modalData" id="modal-xl" size="xl" hide-header hide-footer body-bg-variant="dark">
+      <div class="container">
+        <b-img fluid :src="modalData.Poster" class="p-1 image"></b-img>
+        <div class="middle">
+          <b-icon v-if="!inWishlist(modalData.imdbID)" icon="heart" class="h3" variant="danger"
+            @click="addWishlist(modalData)"></b-icon>
+          <b-icon v-else icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(modalData)"></b-icon>
+          <div class="text">
+            {{ modalData.Title }} <br /><br />
+            {{ modalData.Year }}
+          </div>
+        </div>
+      </div>
+      <div>
+        Title: {{ modalData.Title }}<br />
+        Release Date: {{ modalData.Released }}<br />
+        Genres: {{ modalData.Genre }}<br />
+        Director: {{ modalData.Director }}<br />
+        Actors: {{ modalData.Actors }}<br />
+        Plot: {{ modalData.Plot }}<br />
+        IMDB Rating: {{ modalData.imdbRating }}<br />
+        Website: {{ modalData.Website }}
+      </div>
+    </b-modal>
   </b-container>
 </template>
 
@@ -84,6 +85,7 @@ export default {
       search: undefined,
       searchResult: undefined,
       wishlist: [],
+      modalData: undefined
     };
   },
   methods: {
@@ -117,6 +119,19 @@ export default {
     inWishlist(result) {
       return localStorage.getItem(result);
     },
+    async openModal(imdbID) {
+      this.modalData = null
+      await axios
+        .get("http://localhost:8080/movies/" + imdbID + "/details")
+        .then((response) => {
+          if (response.data.Response === "True") {
+            this.modalData = response.data;
+          } else {
+            this.modalData = null;
+          }
+        });
+      this.$bvModal.show('modal-xl')
+    }
   },
 };
 </script>
@@ -128,33 +143,41 @@ export default {
   color: white;
   border: 1px solid yellow;
 }
+
 .weiss-cinema:focus {
   background-color: black;
   color: white;
   border: 1px solid yellow;
 }
+
 .bg-black {
   height: 100vh;
   background-color: black;
   overflow: auto;
 }
+
 hr.solid {
   border-top: 2px solid gray;
 }
+
 .serach-result-label {
   color: white;
   font-size: 20px;
 }
+
 .container {
   width: 300px;
+  max-height: auto;
   display: inline-block;
   position: relative;
 }
+
 .image {
-  display: block;
-  width: 100%;
-  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  vertical-align: top;
 }
+
 .middle {
   position: absolute;
   top: 0;
@@ -166,17 +189,31 @@ hr.solid {
   opacity: 0;
   transition: 0.5s ease;
 }
+
 .text {
   color: yellow;
   font-size: 20px;
-  position: absolute;
+  /*position: absolute;
   top: 50%;
   left: 50%;
   -webkit-transform: translate(-50%, -50%);
   -ms-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);*/
   text-align: center;
+  width: 100%;
+  height: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
 }
+
+.text p {
+  display: inline-block;
+  line-height: normal;
+  vertical-align: middle;
+}
+
 .container:hover .image {
   opacity: 0.3;
 }
