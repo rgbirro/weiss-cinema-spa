@@ -39,51 +39,13 @@
       <div v-if="wishlist.length !== 0">
         <p class="serach-result-label">Your Wishlist</p>
         <hr class="solid" />
-        <div v-for="movie in wishlist" :key="movie.imdbID" class="container">
+        <div v-for="movie in wishlist" :key="movie.imdbID" class="container p-2">
           <Poster :movie="movie" @openModal="openModal" @addWishlist="addWishlist" @removeWishlist="removeWishlist"
             :wishlist="wishlist" />
         </div>
       </div>
-
-      <b-modal v-if="modalData" id="modal-xl" size="xl" hide-header hide-footer body-bg-variant="dark">
-        <b-row>
-          <b-col sm="3" class="p-2">
-            <div class="container">
-              <Poster :movie="modalData" @openModal="openModal" @addWishlist="addWishlist"
-                @removeWishlist="removeWishlist" :wishlist="wishlist" />
-            </div>
-          </b-col>
-          <b-col>
-            <div class="movie-details">
-              <p class="h2">
-                {{ modalData.Title }}<br />
-                {{ modalData.Year }}
-              </p>
-              <p>
-                <label>Release Date:</label> <span>{{ modalData.Released }}</span>
-              </p>
-              <p>
-                <label>Genres:</label> <span>{{ modalData.Genre }}</span>
-              </p>
-              <p>
-                <label>Director:</label> <span>{{ modalData.Director }}</span>
-              </p>
-              <p>
-                <label>Actors:</label> <span>{{ modalData.Actors }}</span>
-              </p>
-              <p>
-                <label>Plot:</label> <span>{{ modalData.Plot }}</span>
-              </p>
-              <p>
-                <label>IMDB Rating:</label> <span>{{ modalData.imdbRating }}</span>
-              </p>
-              <p>
-                <label>Website:</label><span> {{ modalData.Website }}</span>
-              </p>
-            </div>
-          </b-col>
-        </b-row>
-      </b-modal>
+      <movie-details :modalData="modalData" :wishlist="wishlist" @openModal="openModal" @addWishlist="addWishlist"
+                @removeWishlist="removeWishlist" />      
     </b-overlay>
   </b-container>
 </template>
@@ -91,9 +53,11 @@
 <script>
 import axios from "axios";
 import Poster from "./Poster.vue"
+import MovieDetails from "./MovieDetails.vue"
 export default {
   components: {
-    Poster
+    Poster,
+    MovieDetails
   },
   name: "MovieSearch",
   data() {
