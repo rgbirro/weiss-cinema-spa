@@ -1,6 +1,14 @@
 <template>
   <b-container fluid class="bg-black">
-    <b-row class="justify-content-center">
+    <b-row class="py-5">
+      <b-col sm="4" class="justify-content-center">
+        <div style="float: left" class="p-1 pr-2">
+          <b-icon icon="camera-reels-fill" class="h1" style="color:red"></b-icon>
+        </div>
+        <div>
+          <h1 style="color:red">WEISS CINEMA</h1>
+        </div>
+      </b-col>
       <b-col sm="4">
         <div style="float: left" class="p-1 pr-2">
           <b-icon icon="search" class="h3" variant="light"></b-icon>
@@ -14,78 +22,87 @@
     <p v-if="search" class="serach-result-label">
       Search Results for "{{ search }}"
     </p>
-    <div v-if="searchResult">
-      <hr class="solid" />
-      <div v-for="result in searchResult" :key="result.imdbID" class="container p-2">
-        <b-img :src="result.Poster" class="image"></b-img>
-        <div class="middle">
-          <div>
-            <b-icon v-if="!inWishlist(result.imdbID)" icon="heart" class="h3" variant="danger"
-              @click="addWishlist(result)"></b-icon>
-            <b-icon v-else icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(result)"></b-icon>
-          </div>
-          <div class="text" @click="openModal(result.imdbID)">
-            {{ result.Title }} <br />
-            {{ result.Year }}
-          </div>
+    <b-overlay :show="showModal" rounded="sm" variant="light" opacity="0.20">
+      <div v-if="searchResult">
+        <hr class="solid" />
+        <div v-for="movie in searchResult" :key="movie.imdbID" class="container p-2">
+          <Poster :movie="movie" @openModal="openModal" @addWishlist="addWishlist" @removeWishlist="removeWishlist"
+            :wishlist="wishlist" />
+        </div>
+        <hr class="solid" />
+      </div>
+      <div v-if="search && !searchResult">
+        <hr class="solid" />
+        <p class="serach-result-label">No results for this search. Error: {{ errorMessage }}</p>
+      </div>
+      <div v-if="wishlist.length !== 0">
+        <p class="serach-result-label">Your Wishlist</p>
+        <hr class="solid" />
+        <div v-for="movie in wishlist" :key="movie.imdbID" class="container">
+          <Poster :movie="movie" @openModal="openModal" @addWishlist="addWishlist" @removeWishlist="removeWishlist"
+            :wishlist="wishlist" />
         </div>
       </div>
-    </div>
-    <div v-if="search && !searchResult">
-      <hr class="solid" />
-      <p class="serach-result-label">No results for this search</p>
-    </div>
-    <div v-if="wishlist.length !== 0">
-      <p class="serach-result-label">Your Wishlist</p>
-      <hr class="solid" />
-      <div v-for="result in wishlist" :key="result.imdbID" class="container">
-        <b-img fluid :src="result.Poster" @click="openModal(result.imdbID)" class="image"></b-img>
-        <div class="middle">
-          <b-icon icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(result)"></b-icon>
-          <div class="text">
-            {{ result.Title }} <br /><br />
-            {{ result.Year }}
-          </div>
-        </div>
-      </div>
-    </div>
-    <b-modal v-if="modalData" id="modal-xl" size="xl" hide-header hide-footer body-bg-variant="dark">
-      <div class="container">
-        <b-img fluid :src="modalData.Poster" class="p-1 image"></b-img>
-        <div class="middle">
-          <b-icon v-if="!inWishlist(modalData.imdbID)" icon="heart" class="h3" variant="danger"
-            @click="addWishlist(modalData)"></b-icon>
-          <b-icon v-else icon="heart-fill" class="h3" variant="danger" @click="removeWishlist(modalData)"></b-icon>
-          <div class="text">
-            {{ modalData.Title }} <br /><br />
-            {{ modalData.Year }}
-          </div>
-        </div>
-      </div>
-      <div>
-        Title: {{ modalData.Title }}<br />
-        Release Date: {{ modalData.Released }}<br />
-        Genres: {{ modalData.Genre }}<br />
-        Director: {{ modalData.Director }}<br />
-        Actors: {{ modalData.Actors }}<br />
-        Plot: {{ modalData.Plot }}<br />
-        IMDB Rating: {{ modalData.imdbRating }}<br />
-        Website: {{ modalData.Website }}
-      </div>
-    </b-modal>
+
+      <b-modal v-if="modalData" id="modal-xl" size="xl" hide-header hide-footer body-bg-variant="dark">
+        <b-row>
+          <b-col sm="3" class="p-2">
+            <div class="container">
+              <Poster :movie="modalData" @openModal="openModal" @addWishlist="addWishlist"
+                @removeWishlist="removeWishlist" :wishlist="wishlist" />
+            </div>
+          </b-col>
+          <b-col>
+            <div class="movie-details">
+              <p class="h2">
+                {{ modalData.Title }}<br />
+                {{ modalData.Year }}
+              </p>
+              <p>
+                <label>Release Date:</label> <span>{{ modalData.Released }}</span>
+              </p>
+              <p>
+                <label>Genres:</label> <span>{{ modalData.Genre }}</span>
+              </p>
+              <p>
+                <label>Director:</label> <span>{{ modalData.Director }}</span>
+              </p>
+              <p>
+                <label>Actors:</label> <span>{{ modalData.Actors }}</span>
+              </p>
+              <p>
+                <label>Plot:</label> <span>{{ modalData.Plot }}</span>
+              </p>
+              <p>
+                <label>IMDB Rating:</label> <span>{{ modalData.imdbRating }}</span>
+              </p>
+              <p>
+                <label>Website:</label><span> {{ modalData.Website }}</span>
+              </p>
+            </div>
+          </b-col>
+        </b-row>
+      </b-modal>
+    </b-overlay>
   </b-container>
 </template>
 
 <script>
 import axios from "axios";
+import Poster from "./Poster.vue"
 export default {
+  components: {
+    Poster
+  },
   name: "MovieSearch",
   data() {
     return {
       search: undefined,
       searchResult: undefined,
       wishlist: [],
-      modalData: undefined
+      modalData: undefined,
+      errorMessage: undefined,
+      showModal: false
     };
   },
   methods: {
@@ -97,30 +114,27 @@ export default {
             this.searchResult = response.data.Search;
           } else {
             this.searchResult = null;
+            this.errorMessage = response.data.Error
           }
         });
     },
     addWishlist(result) {
-      console.log(result);
       if (!localStorage.getItem(result)) {
         this.wishlist.push(result);
         localStorage.setItem(result.imdbID, JSON.stringify(result));
       }
     },
     removeWishlist(result) {
-      console.log(result);
       if (localStorage.getItem(result.imdbID)) {
         localStorage.removeItem(result.imdbID);
-        var test = this.wishlist.findIndex((w) => w.imdbID === result.imdbID);
-        console.log(test);
-        this.wishlist.splice(test, 1);
+        var index = this.wishlist.findIndex((w) => w.imdbID === result.imdbID);
+        this.wishlist.splice(index, 1);
       }
     },
-    inWishlist(result) {
-      return localStorage.getItem(result);
-    },
+
     async openModal(imdbID) {
       this.modalData = null
+      this.showModal = true
       await axios
         .get("http://localhost:8080/movies/" + imdbID + "/details")
         .then((response) => {
@@ -131,7 +145,8 @@ export default {
           }
         });
       this.$bvModal.show('modal-xl')
-    }
+      this.showModal = false
+    },
   },
 };
 </script>
@@ -167,51 +182,8 @@ hr.solid {
 
 .container {
   width: 300px;
-  max-height: auto;
   display: inline-block;
   position: relative;
-}
-
-.image {
-  max-width: 100%;
-  max-height: 100%;
-  vertical-align: top;
-}
-
-.middle {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  width: 100%;
-  opacity: 0;
-  transition: 0.5s ease;
-}
-
-.text {
-  color: yellow;
-  font-size: 20px;
-  /*position: absolute;
-  top: 50%;
-  left: 50%;
-  -webkit-transform: translate(-50%, -50%);
-  -ms-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);*/
-  text-align: center;
-  width: 100%;
-  height: 80%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-}
-
-.text p {
-  display: inline-block;
-  line-height: normal;
-  vertical-align: middle;
 }
 
 .container:hover .image {
@@ -220,5 +192,20 @@ hr.solid {
 
 .container:hover .middle {
   opacity: 1;
+}
+
+.movie-details {
+  color: white;
+}
+
+label {
+  color: yellow;
+  font-weight: bold;
+  font-size: larger;
+  display: inline;
+}
+
+span {
+  font-size: larger;
 }
 </style>
