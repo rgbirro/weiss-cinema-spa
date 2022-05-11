@@ -34,6 +34,7 @@
       <div v-if="search && !searchResult">
         <hr class="solid" />
         <p class="serach-result-label">No results for this search. Error: {{ errorMessage }}</p>
+        <hr class="solid" />
       </div>
       <div v-if="wishlist.length !== 0">
         <p class="serach-result-label">Your Wishlist</p>
@@ -102,13 +103,20 @@ export default {
       wishlist: [],
       modalData: undefined,
       errorMessage: undefined,
-      showModal: false
+      showModal: false,
+      requests: []
     };
   },
   methods: {
     searchApi() {
+      this.requests.forEach(element => {
+        element.cancel();
+      });
+      this.requests = []
+      var newRequest = axios.CancelToken.source();
+      this.requests.push(newRequest);
       axios
-        .get("http://localhost:8080/movies?search=" + this.search)
+        .get("http://localhost:8080/movies?search=" + this.search, { cancelToken: newRequest.token })
         .then((response) => {
           if (response.data.Response === "True") {
             this.searchResult = response.data.Search;
@@ -116,6 +124,8 @@ export default {
             this.searchResult = null;
             this.errorMessage = response.data.Error
           }
+        }).finally(() => {
+          this.requests.splice(this.requests.findIndex(a => a.token === newRequest.token));
         });
     },
     addWishlist(result) {
